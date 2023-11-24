@@ -19,6 +19,7 @@ export class HomePage {
   constructor(private apiRequestService: ApiRequestService) {}
 
   ngOnInit() {
+
     this.apiRequestService.findAll().subscribe((response) => {
       for (const point of response) {
         if (point.hasOwnProperty('latitude') && point.hasOwnProperty('longitude')) {
@@ -26,14 +27,14 @@ export class HomePage {
         }
       }
       this.createPolyline();
-    })
+    });
   }
 
   ionViewDidEnter() {
 
     this.map = L.map('map').setView([35.6895, 10.746], 8);
 
-    L.tileLayer('https://maps.geoapify.com/v1/tile/carto/{z}/{x}/{y}.png?&apiKey=e0faf5c5888d4e18a77858bfe67e36ce', {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(this.map);
 
@@ -47,6 +48,7 @@ export class HomePage {
 
   createMarkers() {
       (L.Control as any).geocoder({
+        placeholder: 'Start point',
         defaultMarkGeocode: false
         }).on('markgeocode', (e: any) => {
           var latlng = e.geocode.center;
@@ -55,6 +57,7 @@ export class HomePage {
         }).addTo(this.map);
 
       (L.Control as any).geocoder({
+        placeholder: 'End point',
         defaultMarkGeocode: false
         }).on('markgeocode', (e: any) => {
           var latlng = e.geocode.center;
@@ -74,27 +77,14 @@ export class HomePage {
       ]
     }).on('routesfound',(e : any)=>{
 
-      e.routes[0].coordinates.forEach( async (coord :any,index: any)=>{
-        const placeName = await this.getPlaceName(coord.lat, coord.lng);
+      e.routes[0].coordinates.forEach((coord :any,index: any)=>{
         setTimeout(()=>{
           marker.setLatLng([coord.lat,coord.lng])
-            .bindPopup(`Latitude: ${coord.lat}<br>Longitude: ${coord.lng}<br>Place Name: ${placeName}`)
+            .bindPopup(`Latitude: ${coord.lat}<br>Longitude: ${coord.lng}`)
             .openPopup();
-        },20 * index)
+        },100 * index)
       })
     }).addTo(this.map);
-  }
-
-
-  async getPlaceName(lat: number, lng: number): Promise<string> {
-    const response = await fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&apiKey=e0faf5c5888d4e18a77858bfe67e36ce`);
-    const data = await response.json();
-
-    if (data.display_name) {
-      return data.display_name;
-    } else {
-      return "Unknown Place";
-    }
   }
 
 }
